@@ -259,7 +259,7 @@ struct kernel_image_header {
 	unsigned char	name[32];
 };
 
-int load_kernel(struct image_info *image)
+int load_kernel(struct nand_info *nand,struct image_info *image)
 {
 	struct kernel_image_header *image_header;
 	unsigned int load_addr, image_size;
@@ -276,7 +276,7 @@ int load_kernel(struct image_info *image)
 #endif
 
 #ifdef CONFIG_NANDFLASH
-	ret = load_nandflash(image);
+	ret = load_nandflash(nand,image);
 #endif
 
 #ifdef CONFIG_SDCARD
@@ -309,14 +309,15 @@ int load_kernel(struct image_info *image)
 	kernel_entry = (void (*)(int, int, unsigned int))
 					swap_uint32(image_header->entry_point);
 
-	dbg_info("Relocating kernel image, dest: %d, src: %d\n",
-		load_addr, jump_addr + sizeof(struct kernel_image_header));
+	if ( ((void *)load_addr) != ( (void *)(jump_addr + sizeof(struct kernel_image_header))) ){
+		dbg_info("Relocating kernel image, dest: %d, src: %d\n",
+			load_addr, jump_addr + sizeof(struct kernel_image_header));
 
-	memcpy((void *)load_addr, (void *)(jump_addr
-			+ sizeof(struct kernel_image_header)), image_size);
+		memcpy((void *)load_addr, (void *)(jump_addr
+				+ sizeof(struct kernel_image_header)), image_size);
 
-	dbg_info(" ...... %d bytes data transferred\n", image_size);
-
+		dbg_info(" ...... %d bytes data transferred\n", image_size);
+	}
 	if (image->of) {
 		ret = setup_dt_blob((char *)image->of_dest);
 		if (ret)

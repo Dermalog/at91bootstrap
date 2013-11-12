@@ -28,6 +28,24 @@
 #ifndef __NANDFLASH_H__
 #define __NANDFLASH_H__
 
-extern int load_nandflash(struct image_info *image);
+#include "nand.h"
+extern int nand_erase_block(struct nand_info *nand,unsigned int row_address );
+extern int nand_init(struct nand_info *nand);
+int nand_loadimage(struct nand_info *nand,
+				unsigned int offset,
+				unsigned int length,
+				unsigned char *dest);
+extern int load_nandflash(struct nand_info *nand, struct image_info *image);
+extern int nand_read_sector(struct nand_info *nand,
+		unsigned int row_address,
+		unsigned char *buffer,
+		unsigned int zone_flag);
+extern int nand_write_page(struct nand_info *nand,
+		unsigned int row_address,
+		unsigned char *buffer);
+extern int nand_write_block(struct nand_info *nand,
+	unsigned int row_address,
+	unsigned char *buffer);
+
 
 #endif /* #ifndef __NANDFLASH_H__ */

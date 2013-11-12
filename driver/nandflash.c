@@ -122,6 +122,11 @@ static unsigned short read_word(void)
 	return(readw((unsigned long)CONFIG_SYS_NAND_BASE));
 }
 
+static void write_word(unsigned short data)
+{
+       writew(data,(unsigned long)CONFIG_SYS_NAND_BASE);
+}
+
 static void nand_wait_ready(void)
 {
 	unsigned int timeout = 10000;
@@ -313,6 +318,7 @@ static unsigned short onfi_crc16(unsigned short crc,
 #define ONFI_PARAMS_SIZE		256
 
 #define PARAMS_OFFSET_BUSWIDTH		6
+#define PARAMS_OFFSET_FEATURES      8
 #define PARAMS_OFFSET_MODEL		49
 #define PARAMS_OFFSET_JEDEC_ID		64
 #define PARAMS_OFFSET_PAGESIZE		80
@@ -388,6 +394,8 @@ static int nandflash_detect_onfi(struct nand_chip *chip)
 	chip->buswidth	= (*(unsigned char *)(p + PARAMS_OFFSET_BUSWIDTH))
 								& 0x01;
 
+	chip->features  = (*(unsigned short *)(p+PARAMS_OFFSET_FEATURES))&0x0004?1:0;
+
 	manf_id = *(unsigned char *)(p + PARAMS_OFFSET_JEDEC_ID);
 	dev_id = *(unsigned char *)(p + PARAMS_OFFSET_MODEL);
 	dbg_info("NAND: Manufacturer ID: %d Chip ID: %d\n", manf_id, dev_id);
@@ -439,7 +447,7 @@ static int nandflash_detect_non_onfi(struct nand_chip *chip)
 	return 0;
 }
 
-static void nand_info_init(struct nand_info *nand, struct nand_chip *chip)
+void nand_info_init(struct nand_info *nand, struct nand_chip *chip)
 {
 	/* number of blocks in device */
 	nand->numblocks = chip->numblocks;
@@ -468,6 +476,7 @@ static void nand_info_init(struct nand_info *nand, struct nand_chip *chip)
 		nand->command = nand_command;
 		nand->address = nand_address;
 	}
+	nand->features = chip->features;
 }
 
 static void nandflash_reset(void)
@@ -481,7 +490,7 @@ static void nandflash_reset(void)
 	nand_cs_disable();
 }
 
-static int nandflash_get_type(struct nand_info *nand)
+int nandflash_get_type(struct nand_info *nand)
 {
 	struct nand_chip *chip = &nand_chip_default;
 
@@ -506,8 +515,9 @@ static int nandflash_get_type(struct nand_info *nand)
 #endif
 
 #ifdef CONFIG_USE_ON_DIE_ECC_SUPPORT
-	if (nand_init_on_die_ecc())
-		return -1;
+	if (chip->features)
+		if (nand_init_on_die_ecc())
+			return -1;
 #endif
 
 	nand_info_init(nand, chip);
@@ -572,7 +582,7 @@ static int nand_read_status(void)
 }
 
 #ifdef CONFIG_NANDFLASH_SMALL_BLOCKS
-static int nand_read_sector(struct nand_info *nand, 
+int nand_read_sector(struct nand_info *nand, 
 			unsigned int row_address,
 			unsigned char *buffer,
 			unsigned int zone_flag)
@@ -636,7 +646,7 @@ static int nand_read_sector(struct nand_info *nand,
 	return 0;
 }
 #else /* large blocks */
-static int nand_read_sector(struct nand_info *nand,
+int nand_read_sector(struct nand_info *nand,
 				unsigned int row_address,
 				unsigned char *buffer, 
 				unsigned int zone_flag)
@@ -783,6 +793,88 @@ static int nand_read_page(struct nand_info *nand,
 #endif /* #ifndef CONFIG_ENABLE_SW_ECC */
 }
 
+// Write
+#ifdef NANDFLASH_SMALL_BLOCKS
+#error nand_write_sector not impelemted for NANDFLASH_SMALL_BLOCKS configuration
+#else /* large blocks */
+int nand_write_page(struct nand_info *nand,
+				unsigned int row_address,
+				unsigned char *buffer)
+{
+	unsigned int writebytes= nand->pagesize;
+	unsigned int i;
+	unsigned int column_address = 0;
+	int ret = 0;
+	unsigned char *pbuf = buffer;
+	unsigned int timeout = 10000;
+	unsigned int status;
+
+	writebytes = nand->pagesize;
+
+	nand_cs_enable();
+
+	if (nand->buswidth)
+		nand_command16(CMD_WRITE_1);
+	else
+		nand_command(CMD_WRITE_1);
+
+	write_column_address(nand, column_address);
+	write_row_address(nand, row_address);
+
+	/* Write loop */
+	if (nand->buswidth) {
+		for (i = 0; i < writebytes / 2; i++) {
+			write_word(*((short *)pbuf));
+			pbuf += 2;
+		}
+	} else {
+		for (i = 0; i < writebytes; i++)
+			write_byte(*pbuf++);
+	}
+
+	if (nand->buswidth)
+		nand_command16(CMD_WRITE_2);
+	else
+		nand_command(CMD_WRITE_2);
+
+	udelay(220);
+
+	nand_command(CMD_STATUS);
+	while ((!((status = read_byte()) & STATUS_READY)) && --timeout)
+		;
+
+	nand_cs_disable();
+
+	if (status & STATUS_ERROR)
+		return -1;
+
+	if (timeout == 0)
+		return -2;
+
+	if (nand_read_status())
+		return -1;
+
+	return ret;
+}
+#endif /* #ifdef NANDFLASH_SMALL_BLOCKS */
+
+int nand_write_block(struct nand_info *nand,
+	unsigned int row_address,
+	unsigned char *buffer){
+
+	int res;
+	unsigned int page;
+
+	for(page=0; page<nand->pages_block;page++){
+		res = nand_write_page(nand,row_address,buffer);
+		if (res < 0 )
+			return res;
+		row_address++; // address for next page
+		buffer+=nand->pagesize;
+	}
+	return 0;
+}
+
 #ifdef CONFIG_NANDFLASH_RECOVERY
 static int nand_erase_block0(struct nand_info *nand)
 {
@@ -840,7 +932,7 @@ static int nandflash_recovery(struct nand_info *nand)
 }
 #endif /* #ifdef CONFIG_NANDFLASH_RECOVERY */
 
-static int nand_loadimage(struct nand_info *nand,
+int nand_loadimage(struct nand_info *nand,
 				unsigned int offset,
 				unsigned int length,
 				unsigned char *dest)
@@ -901,34 +993,37 @@ static int nand_loadimage(struct nand_info *nand,
 	return 0;
 }
 
-int load_nandflash(struct image_info *image)
-{
-	struct nand_info nand;
-	int ret;
-
+int nand_init(struct nand_info * nand){
+	
 	nandflash_hw_init();
 
-	if (nandflash_get_type(&nand))
+	if (nandflash_get_type(nand))
 		return -1;
 
 #ifdef CONFIG_NANDFLASH_RECOVERY
-	if (nandflash_recovery(&nand) == 0)
+	if (nandflash_recovery(nand) == 0)
 		return -2;
 #endif
 
 #ifdef CONFIG_USE_PMECC
-	if (init_pmecc(&nand))
+	if (init_pmecc(nand))
 		return -1;
 #endif
 
 #ifdef CONFIG_ENABLE_SW_ECC
-	dbg_info("NAND: Using Software ECC\n");
+	dbg_log(1, "NAND: Using Software ECC\n\r");
 #endif
+        return 0;
+}
+
+int load_nandflash(struct nand_info *nand, struct image_info *image)
+{
+	int ret;
 
 	dbg_info("NAND: Image: Copy %d bytes from %d to %d\n",
 			image->length, image->offset, image->dest);
 
-	ret = nand_loadimage(&nand, image->offset, image->length, image->dest);
+	ret = nand_loadimage(nand, image->offset, image->length, image->dest);
 	if (ret)
 		return ret;
 
@@ -936,7 +1031,7 @@ int load_nandflash(struct image_info *image)
 		dbg_info("NAND: dt blob: Copy %d bytes from %d to %d\n",
 			image->of_length, image->of_offset, image->of_dest);
 
-		ret = nand_loadimage(&nand, image->of_offset,
+		ret = nand_loadimage(nand, image->of_offset,
 					image->of_length, image->of_dest);
 		if (ret)
 			return ret;
@@ -944,3 +1039,32 @@ int load_nandflash(struct image_info *image)
 
 	return 0;
  }
+
+int nand_erase_block(struct nand_info *nand,unsigned int row_address )
+{
+	unsigned int timeout = 10000;
+	unsigned int status;
+
+	nand_cs_enable();
+
+	nand_command(CMD_ERASE_1);
+	write_row_address(nand, row_address);
+	nand_command(CMD_ERASE_2);
+
+	udelay(2000);
+
+	nand_command(CMD_STATUS);
+	while ((!((status = read_byte()) & STATUS_READY)) && --timeout)
+		;
+
+	nand_cs_disable();
+
+	if (status & STATUS_ERROR)
+		return -1;
+
+	if (timeout == 0)
+		return -2;
+
+	return 0;
+}
+

@@ -37,8 +37,10 @@
 #include "flash.h"
 #include "string.h"
 #include "onewire_info.h"
+#include "env.h" 
+#include "nand.h"
 
-extern int load_kernel(struct image_info *img_info);
+extern int load_kernel(struct nand_info *nand, struct image_info *img_info);
 
 typedef int (*load_function)(struct image_info *img_info);
 
@@ -76,7 +78,7 @@ static void display_banner (void)
 	usart_puts("\n");
 	usart_puts("\n");
 }
-
+#if 0
 int main(void)
 {
 	struct image_info image;
@@ -158,6 +160,40 @@ int main(void)
 #ifdef CONFIG_SCLK
 	slowclk_switch_osc32();
 #endif
+
+	return JUMP_ADDR;
+}
+#endif
+int main(void){
+	struct image_info image;
+	struct nand_info nand;
+
+	hw_init();
+
+	nand_init(&nand);
+
+	display_banner();
+        
+	env_main(&nand);
+
+	memset(&image, 0, sizeof(image));
+
+	image.dest = (unsigned char *)JUMP_ADDR;
+#ifdef CONFIG_OF_LIBFDT
+	image.of = 1;
+	image.of_dest = (unsigned char *)OF_ADDRESS;
+#endif
+
+#ifdef CONFIG_NANDFLASH
+	image.offset = IMG_ADDRESS;
+	image.length = IMG_SIZE;
+#ifdef CONFIG_OF_LIBFDT
+	image.of_offset = OF_OFFSET;
+	image.of_length = OF_LENGTH;
+#endif
+#endif
+
+	load_kernel(&nand,&image);
 
 	return JUMP_ADDR;
 }

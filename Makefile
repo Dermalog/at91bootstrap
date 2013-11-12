@@ -3,6 +3,10 @@
 # First, run xxx_defconfig
 # Then, `make menuconfig' if needed
 #
+ARCH=arm
+CROSS_COMPILE=arm-linux-gnueabi-
+#CROSS_COMPILE=arm-none-eabi-
+
 
 TOPDIR=$(shell pwd)
 
@@ -170,7 +174,7 @@ OBJS:= $(SOBJS-y) $(COBJS-y)
 INCL=board/$(BOARD)
 GC_SECTIONS=--gc-sections
 
-CPPFLAGS=-ffunction-sections -g -Os -Wall \
+CPPFLAGS=-ffunction-sections -g -O0 -Wall \
 	-fno-stack-protector \
 	-I$(INCL) -Iinclude -Ifs/include \
 	-DAT91BOOTSTRAP_VERSION=\"$(VERSION)$(REV)$(SCMINFO)\" -DCOMPILE_TIME="\"$(DATE)\""
