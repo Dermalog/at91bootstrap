@@ -69,7 +69,7 @@ static char *cmd_line_android = "console=ttyS0,115200 " \
 
 #ifdef CONFIG_OF_LIBFDT
 
-static int setup_dt_blob(void *blob)
+static int setup_dt_blob(void *blob, char *linux_kernel_arg_string)
 {
 	char *bootargs = LINUX_KERNEL_ARG_STRING;
 	char *p;
@@ -84,6 +84,9 @@ static int setup_dt_blob(void *blob)
 
 	dbg_info("\nUsing device tree in place at %d\n",
 						(unsigned int)blob);
+
+	if (linux_kernel_arg_string != NULL)
+		bootargs = linux_kernel_arg_string;
 
 #if defined(CONFIG_LOAD_ANDROID) && defined(CONFIG_SAMA5D3XEK)
 	if (get_dm_sn() == BOARD_ID_PDA_DM)
@@ -189,7 +192,7 @@ static void setup_commandline_tag(struct tag_cmdline *params,
 	strcpy(params->cmdline, p);
 }
 
-static void setup_boot_params(void)
+static void setup_boot_params(char * linux_kernel_arg_string)
 {
 	unsigned int *params = (unsigned int *)(OS_MEM_BANK + 0x100);
 
@@ -213,7 +216,10 @@ static void setup_boot_params(void)
 	params = (unsigned int *)params + TAG_SIZE_MEM32;
 
 	struct tag_cmdline *cmdparam = (struct tag_cmdline *)params;
-	setup_commandline_tag(cmdparam, LINUX_KERNEL_ARG_STRING);
+	if (linux_kernel_arg_string)
+		setup_commandline_tag(cmdparam, linux_kernel_arg_string);
+	else
+		setup_commandline_tag(cmdparam, LINUX_KERNEL_ARG_STRING);
 
 	params = (unsigned int *)params + cmdparam->header.size;
 
@@ -319,7 +325,7 @@ int load_kernel(struct nand_info *nand,struct image_info *image)
 		dbg_info(" ...... %d bytes data transferred\n", image_size);
 	}
 	if (image->of) {
-		ret = setup_dt_blob((char *)image->of_dest);
+		ret = setup_dt_blob((char *)image->of_dest,image->linux_kernel_arg_string);
 		if (ret)
 			return ret;
 

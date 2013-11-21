@@ -52,6 +52,7 @@ struct image_info
 	unsigned int of_length;
 	char *of_filename;
 	unsigned char *of_dest;
+	char * linux_kernel_arg_string;
 };
 
 extern void (*sdcard_set_of_name)(char *);

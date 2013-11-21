@@ -399,14 +399,12 @@ void dump(unsigned char *buf, int len)
 	dbg_log(1, "\r\n");
 }
 
-int env_main(struct nand_info *nand) {
+int env_main(struct nand_info *nand, struct image_info *image) {
 	char * p;
 	uint8_t cmd_nr;
-	char *cmd;
-	uint32_t kernelAddr;
-	uint32_t dtbAddr;
-	unsigned char sector_buf[0x840];
-	unsigned int addr;
+	char *cmd=NULL;
+	uint32_t kernelAddr=0;
+	uint32_t dtbAddr=0;
 
 	p = varenv_read(nand, BOOTVAR_ADDR);
 	dump((unsigned char *)vars,0x20);
@@ -437,6 +435,28 @@ int env_main(struct nand_info *nand) {
 	kernelAddr = envvars[cmd_nr].kernelAddr;
 	dtbAddr = envvars[cmd_nr].dtbAddr;
 	usart_puts(cmd);
+
+
+#ifdef CONFIG_NANDFLASH
+	if (kernelAddr)
+		image->offset = kernelAddr;
+	else
+		image->offset = IMG_ADDRESS;
+
+	image->length = IMG_SIZE;
+#ifdef CONFIG_OF_LIBFDT
+	if (dtbAddr)
+		image->of_offset = dtbAddr;
+	else
+		image->of_offset = OF_OFFSET;
+
+	image->of_length = OF_LENGTH;
+#endif
+#endif
+
+	if (cmd)
+		image->linux_kernel_arg_string = cmd;
+
 	dbg_log(1,"\n\r"); dbg_log(1,"kernelAddr=%x\n\r",kernelAddr); dbg_log(1,"dtbAddr=%x\n\r",dtbAddr);
 	return 0;
 }

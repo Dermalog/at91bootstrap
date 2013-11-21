@@ -42,7 +42,7 @@
 
 extern int load_kernel(struct nand_info *nand, struct image_info *img_info);
 
-typedef int (*load_function)(struct image_info *img_info);
+typedef int (*load_function)(struct nand_info *nand, struct image_info *img_info);
 
 static load_function load_image;
 
@@ -167,6 +167,7 @@ int main(void)
 int main(void){
 	struct image_info image;
 	struct nand_info nand;
+	memset(&image, 0, sizeof(image));
 
 	hw_init();
 
@@ -174,23 +175,12 @@ int main(void){
 
 	display_banner();
         
-	env_main(&nand);
-
-	memset(&image, 0, sizeof(image));
+	env_main(&nand, &image);
 
 	image.dest = (unsigned char *)JUMP_ADDR;
 #ifdef CONFIG_OF_LIBFDT
 	image.of = 1;
 	image.of_dest = (unsigned char *)OF_ADDRESS;
-#endif
-
-#ifdef CONFIG_NANDFLASH
-	image.offset = IMG_ADDRESS;
-	image.length = IMG_SIZE;
-#ifdef CONFIG_OF_LIBFDT
-	image.of_offset = OF_OFFSET;
-	image.of_length = OF_LENGTH;
-#endif
 #endif
 
 	load_kernel(&nand,&image);
