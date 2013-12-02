@@ -119,6 +119,12 @@
 #define AT91C_BASE_TDES		0xf803c000
 #define AT91C_BASE_TRNG		0xf8044000
 
+/* MAC registers */
+#define MACB_SA1B	(AT91C_BASE_EMAC + 0x0098)
+#define MACB_SA1T	(AT91C_BASE_EMAC + 0x009c)
+#define GEM_SA1B	(AT91C_BASE_GMAC + 0x0088)
+#define GEM_SA1T	(AT91C_BASE_GMAC + 0x008c)
+
 /*
  * System Peripherals physical base addresses.
  */
@@ -181,6 +187,9 @@
 
 #define ATMEL_BASE_SMC		(AT91C_BASE_SMC + 0x600)
 #define AT91C_SYS_SCKCR		AT91C_BASE_SCKCR
+
+#define AT91C_PMC_PCER1 (AT91C_BASE_PMC + 0x100 )
+#define AT91C_PMC_WPMR  (AT91C_BASE_PMC + 0xE4 )
 /*
  * SoC specific defines
  */

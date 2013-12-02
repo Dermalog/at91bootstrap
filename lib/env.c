@@ -278,8 +278,8 @@ char *strafter(char *str, char after) {
 	return p;
 }
 
-uint32_t hex2num(char *hex) {
-	uint32_t num = 0x0000;
+uint64_t hex2num(char *hex) {
+	uint64_t num = 0x0000;
 	while (*hex) {
 		if (*hex >= '0' && *hex <= '9') {
 			num *= 16;
@@ -356,6 +356,7 @@ typedef struct _envvar {
 	char cmd[300];
 	uint32_t kernelAddr;
 	uint32_t dtbAddr;
+	uint32_t macAddr[2];
 } EnvVars;
 
 EnvVars envvars[2];
@@ -378,7 +379,19 @@ void envvar_decode(char * p) {
 			envvars[0].dtbAddr = hex2num(strafter(strafter(p, '='), 'x'));
 		else if (strncmp(p, "dtbAddr1", 8) == 0)
 			envvars[1].dtbAddr = hex2num(strafter(strafter(p, '='), 'x'));
-
+		else if (strncmp(p, "macAddr", 7) == 0){
+			uint64_t macAddr;
+			uint64_t h = hex2num(strafter(strafter(p, '='), 'x'));
+			macAddr = ((h & 0xFF)<<40) |
+					(((h >> 8) & 0xFF)<< 32) |
+					(((h >> 16) & 0xFF)<< 24) |
+					(((h >> 24) & 0xFF)<< 16) |
+					(((h >> 32) & 0xFF)<< 8) |
+					(((h >> 40) & 0xFF))
+			;
+			envvars[0].macAddr[0] = macAddr >>32 &0xFFFFFFFFUL;
+			envvars[0].macAddr[1] = macAddr & 0xFFFFFFFFUL;
+		}
 		p += len + 1;
 	}
 
@@ -454,8 +467,21 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 #endif
 #endif
 
-	if (cmd)
+	if (strlen(cmd))
 		image->linux_kernel_arg_string = cmd;
+
+	if (envvars[0].macAddr[1]!=0){
+		writel( 0x504D4300, AT91C_PMC_WPMR);
+
+		writel(1 << (AT91C_ID_GMAC-32), AT91C_PMC_PCER1);
+		writel(1 << (AT91C_ID_EMAC-32), AT91C_PMC_PCER1);
+
+		writel( envvars[0].macAddr[1], MACB_SA1B );
+		writel( envvars[0].macAddr[0], MACB_SA1T );
+		writel( envvars[0].macAddr[1], GEM_SA1B  );
+		writel( envvars[0].macAddr[0], GEM_SA1T  );
+	}
+
 
 	dbg_log(1,"\n\r"); dbg_log(1,"kernelAddr=%x\n\r",kernelAddr); dbg_log(1,"dtbAddr=%x\n\r",dtbAddr);
 	return 0;
