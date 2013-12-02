@@ -44,27 +44,7 @@ extern int load_kernel(struct nand_info *nand, struct image_info *img_info);
 
 typedef int (*load_function)(struct nand_info *nand, struct image_info *img_info);
 
-static load_function load_image;
-
 void (*sdcard_set_of_name)(char *) = NULL;
-
-static int init_loadfunction(void)
-{
-#if defined(CONFIG_LOAD_LINUX) || defined(CONFIG_LOAD_ANDROID)
-	load_image = &load_kernel;
-#else
-#if defined (CONFIG_DATAFLASH)
-	load_image = &load_dataflash;
-#elif defined(CONFIG_NANDFLASH)
-	load_image = &load_nandflash;
-#elif defined(CONFIG_SDCARD)
-	load_image = &load_sdcard;
-#else
-#error "No booting media_str specified!"
-#endif
-#endif
-	return 0;
-}
 
 static void display_banner (void)
 {
