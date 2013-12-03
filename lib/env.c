@@ -447,7 +447,7 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 	cmd = envvars[cmd_nr].cmd;
 	kernelAddr = envvars[cmd_nr].kernelAddr;
 	dtbAddr = envvars[cmd_nr].dtbAddr;
-	usart_puts(cmd);
+	dbg_log(1,"%s\n\r",cmd);
 
 
 #ifdef CONFIG_NANDFLASH

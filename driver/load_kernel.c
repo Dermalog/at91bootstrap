@@ -277,17 +277,10 @@ int load_kernel(struct nand_info *nand,struct image_info *image)
 
 	void (*kernel_entry)(int zero, int arch, unsigned int params);
 
-#ifdef CONFIG_DATAFLASH
-	ret = load_dataflash(image);
-#endif
-
 #ifdef CONFIG_NANDFLASH
-	ret = load_nandflash(nand,image);
+	ret = nand_loadimage(nand, image->offset, sizeof(struct kernel_image_header), image->dest);
 #endif
 
-#ifdef CONFIG_SDCARD
-	ret = load_sdcard(image);
-#endif
 	if (ret != 0)
 		return ret;
 
@@ -311,6 +304,19 @@ int load_kernel(struct nand_info *nand,struct image_info *image)
 
 	image_size = swap_uint32(image_header->size);
 	load_addr = swap_uint32(image_header->load);
+#ifdef CONFIG_NANDFLASH
+	ret = nand_loadimage(nand,
+			image->offset,
+			image_size+sizeof(struct kernel_image_header),
+			image->dest);
+	if (ret != 0)
+		return ret;
+	ret = nand_loadimage(nand, image->of_offset,
+						image->of_length, image->of_dest);
+	if (ret != 0)
+		return ret;
+#endif
+
 
 	kernel_entry = (void (*)(int, int, unsigned int))
 					swap_uint32(image_header->entry_point);
