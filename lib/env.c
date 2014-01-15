@@ -133,7 +133,7 @@ int get_latest_var_id(Vars *v){
 
 	// here id have a latest one
     if (check_crc(&vars[id]) == 0 ){
-        id = (id + 1)%2; // if this wrong crc then try other id
+        id = (id + 1)%2; // if this wrong crc lthen try other id
         if (check_crc(&vars[id]) == 0){
 			dbg_log(1,"wrong crc32 on variables\n\r");
 		}
@@ -449,7 +449,6 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 	dtbAddr = envvars[cmd_nr].dtbAddr;
 	dbg_log(1,"%s\n\r",cmd);
 
-
 #ifdef CONFIG_NANDFLASH
 	if (kernelAddr)
 		image->offset = kernelAddr;
@@ -482,8 +481,6 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 		writel( envvars[0].macAddr[0], GEM_SA1T  );
 	}
 
-
-	dbg_log(1,"\n\r"); dbg_log(1,"kernelAddr=%x\n\r",kernelAddr); dbg_log(1,"dtbAddr=%x\n\r",dtbAddr);
 	return 0;
 }
 
