@@ -353,7 +353,7 @@ void bootvars_decode(char *p) {
 }
 
 typedef struct _envvar {
-	char cmd[300];
+	char cmd[1024];
 	uint32_t kernelAddr;
 	uint32_t dtbAddr;
 	uint32_t macAddr[2];
