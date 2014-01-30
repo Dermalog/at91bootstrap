@@ -93,7 +93,7 @@ typedef struct _Vars{
 	char buf[VAR_LEN-sizeof(uint32_t)-sizeof(uint8_t)];
 }Vars;
 
-Vars *vars = (Vars *)(OF_ADDRESS + OF_LENGTH);
+static Vars *vars = (Vars *)(OF_ADDRESS + OF_LENGTH);
 
 int check_crc(const Vars *v){
 	return crc32(0x0000L, (const unsigned char*)v->buf, sizeof(v->buf)) == v->crc32 ? 1 : 0;
@@ -238,7 +238,7 @@ typedef struct _bootvar {
 	unsigned char cmd_nr;
 } BootVars;
 
-BootVars bootvars;
+static BootVars bootvars;
 
 int32_t fill_char(char *buf, char val) {
 	*buf = val;
@@ -359,7 +359,7 @@ typedef struct _envvar {
 	uint32_t macAddr[2];
 } EnvVars;
 
-EnvVars envvars[2];
+static EnvVars envvars[2];
 
 void envvar_decode(char * p) {
 	int len;
@@ -420,7 +420,6 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 	uint32_t dtbAddr=0;
 
 	p = varenv_read(nand, BOOTVAR_ADDR);
-	dump((unsigned char *)vars,0x20);
 	if (p == NULL ) {
 		dbg_log(1,"ENV:Failed to load bootvar region from FLASH\n\r");
 		return -1;
