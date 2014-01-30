@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define MAX_BUFFER	128
+#define MAX_BUFFER	0x100
 
 static char dbg_buf[MAX_BUFFER];
 

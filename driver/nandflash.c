@@ -714,7 +714,7 @@ int nand_read_sector(struct nand_info *nand,
 		}
 	} else {
 		for (i = 0; i < readbytes; i++)
-			*pbuf++ = read_byte();
+			*pbuf++ = *(volatile unsigned char *)(CONFIG_SYS_NAND_BASE);
 
 #ifdef CONFIG_USE_PMECC
 		if (usepmecc)
@@ -965,16 +965,18 @@ int nand_loadimage(struct nand_info *nand,
 		end_page = start_page + numpages;
 
 		/* check the bad block */
+#if 0
 		while (1) {
 			if (nand_check_badblock(nand,
 					block, buffer) != 0) {
 				block++; /* skip this block */
-				dbg_info("NAND: Bad block:" \
-					" #%d\n", block);
-			} else
+				dbg_loud("NAND: Bad block: #%d\n", block);
+			} else{
+				dbg_info("NAND: first not bad block %d\n",block);
 				break;
+			}
 		}
-
+#endif
 		/* read pages of a block */
 		for (page = start_page; page < end_page; page++) {
 			ret = nand_read_page(nand, block, page,
