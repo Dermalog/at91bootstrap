@@ -4,8 +4,8 @@
 # Then, `make menuconfig' if needed
 #
 ARCH=arm
-CROSS_COMPILE=arm-linux-gnueabi-
-#CROSS_COMPILE=arm-none-eabi-
+#CROSS_COMPILE=arm-linux-gnueabi-
+CROSS_COMPILE=/home/ak/work/SAMA5D34/arm-2013.05/bin/arm-none-eabi-
 
 
 TOPDIR=$(shell pwd)
@@ -177,7 +177,7 @@ GC_SECTIONS=--gc-sections
 CPPFLAGS=-ffunction-sections -g -O3 -Wall \
 	-fno-stack-protector \
 	-I$(INCL) -Iinclude -Ifs/include \
-	-DAT91BOOTSTRAP_VERSION=\"$(VERSION)$(REV)$(SCMINFO)\" -DCOMPILE_TIME="\"$(DATE)\""
+	-DAT91BOOTSTRAP_VERSION=\"$(VERSION)$(REV)$(SCMINFO)\" -DCOMPILE_TIME="\"$(DATE)\"" 
 
 ASFLAGS=-g -Os -Wall -I$(INCL) -Iinclude
 
@@ -197,6 +197,18 @@ LDFLAGS+=-T elf32-littlearm.lds $(GC_SECTIONS) -Ttext $(LINK_ADDR)
 ifneq ($(DATA_SECTION_ADDR),)
 LDFLAGS+=-Tdata $(DATA_SECTION_ADDR)
 endif
+
+LIBRARIES = ../../Atmel/sama5d3x-ek/libraries
+# Chip library directory
+CHIP_LIB = $(LIBRARIES)/libchip_sama5d3x
+# Board library directory
+BOARD_LIB = $(LIBRARIES)/libboard_sama5d3x-ek
+LIB_PATH = -L$(CHIP_LIB)/lib
+LIB_PATH += -L$(BOARD_LIB)/lib
+LIB_PATH += -L/home/ak/work/SAMA5D34/arm-2013.05/lib/gcc/arm-none-eabi/4.7.3 
+LIB_PATH += -L/home/ak/work/SAMA5D34/arm-2013.05/arm-none-eabi/lib/
+
+MYLDFLAGS = $(LIB_PATH) -lgcc -lc -lchip_sama5d3x_gcc_dbg -lboard_sama5d3x_ek_gcc_dbg 
 
 gccversion := $(shell expr `$(CC) -dumpversion`)
 
@@ -239,7 +251,7 @@ PrintFlags:
 $(AT91BOOTSTRAP): $(OBJS)
 	$(if $(wildcard $(BINDIR)),,mkdir -p $(BINDIR))
 	@echo "  LD        "$(BOOT_NAME).elf
-	@$(LD) $(LDFLAGS) -n -o $(BINDIR)/$(BOOT_NAME).elf $(OBJS)
+	$(LD) $(LDFLAGS) -n -o $(BINDIR)/$(BOOT_NAME).elf $(OBJS) $(MYLDFLAGS)
 #	@$(OBJCOPY) --strip-debug --strip-unneeded $(BINDIR)/$(BOOT_NAME).elf -O binary $(BINDIR)/$(BOOT_NAME).bin
 	@$(OBJCOPY) --strip-all $(BINDIR)/$(BOOT_NAME).elf -O binary $@
 
@@ -260,6 +272,10 @@ boot: $(AT91BOOTSTRAP).fixboot
 PHONY+= boot bootstrap
 
 rebuild: clean all
+install:
+	cp $(BINDIR)/$(BOOT_NAME).bin ../../my_images/boot.eb.bin
+
+
 
 ChkFileSize: $(AT91BOOTSTRAP)
 	@( fsize=`stat -c%s $(BINDIR)/$(BOOT_NAME).bin`; \
