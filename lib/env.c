@@ -11,7 +11,7 @@
 #include "div.h"
 
 #include <stdint.h>
-#include "memory.h"
+//#include "memory.h"
 #include "stdio.h"
 
 unsigned long crc32 (unsigned long, const unsigned char *, unsigned int);
