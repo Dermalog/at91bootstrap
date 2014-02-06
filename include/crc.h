@@ -57,7 +57,7 @@
 #ifndef _SERVICES_CRC_CRC_H_
 #define _SERVICES_CRC_CRC_H_
 #include <inttypes.h>
-#include <linux/types.h>
+//#include <linux/types.h>
 
 #ifndef __externC
 # ifdef __cplusplus
