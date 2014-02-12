@@ -3,8 +3,8 @@ menu  "NAND flash configuration"
 
 choice
 	prompt "ECC Configuration"
-	default CONFIG_USE_PMECC if CPU_HAS_PMECC
-	default CONFIG_ENABLE_SW_ECC if !CPU_HAS_PMECC
+	default CONFIG_USE_ON_DIE_ECC if CONFIG_ON_DIE_ECC_SUPPORT
+	default CONFIG_USE_PMECC if !CONFIG_ON_DIE_ECC_SUPPORT
 	help
 		Select ECC Configuration
 
@@ -13,11 +13,12 @@ config CONFIG_ENABLE_SW_ECC
 
 config CONFIG_USE_PMECC
 	bool "Using PMECC"
-	depends on CPU_HAS_PMECC
+	depends on CPU_HAS_PMECC 
 
-config CONFIG_ON_DIE_ECC
+config CONFIG_USE_ON_DIE_ECC
 	bool "Using On-Die ECC"
-	depends on CONFIG_USE_ON_DIE_ECC_SUPPORT
+	depends on CONFIG_ON_DIE_ECC_SUPPORT
+
 
 endchoice
 
@@ -26,7 +27,7 @@ menu "PMECC Configuration"
 
 choice
 	prompt "PMECC Error Correction Bits"
-	default CONFIG_PMECC_CORRECT_BITS_2
+	default CONFIG_PMECC_CORRECT_BITS_4
 	help
 		Select the PMECC correction bits
 
@@ -81,11 +82,6 @@ config CONFIG_NANDFLASH_RECOVERY
 
 config CONFIG_ONFI_DETECT_SUPPORT
 	bool "Support NAND flash ONFI detect function"
-	default y
-	help
-
-config CONFIG_USE_ON_DIE_ECC_SUPPORT
-	bool "Support to use NAND flash On-Die ECC"
 	default y
 	help
 

@@ -57,17 +57,21 @@
 #define DEBUG_LOUD        2
 #define DEBUG_VERY_LOUD   4
 
-#ifdef CONFIG_DEBUG
 extern int dbg_printf(const char *fmt_str, ...);
-#else
-#define BOOTSTRAP_DEBUG_LEVEL 0
-static inline int dbg_printf(const char *fmt_str, ...) { return 0; }
-#endif
 
+#ifdef CONFIG_DEBUG
 #define dbg_log(level, fmt_str, args...) \
 	({ \
 		(level) <= BOOTSTRAP_DEBUG_LEVEL ? dbg_printf((fmt_str), ##args) : 0; \
 	})
+#else
+#define BOOTSTRAP_DEBUG_LEVEL 0
+static inline int dbg_printf_dummy(const char *fmt_str, ...) { return 0; }
+#define dbg_log(level, fmt_str, args...) \
+		({ \
+			(level) <= BOOTSTRAP_DEBUG_LEVEL ? dbg_printf_dummy((fmt_str), ##args) : 0; \
+		})
+#endif
 
 #define dbg_info(fmt_str, arg...)		\
 	dbg_log(DEBUG_INFO, fmt_str , ## arg)

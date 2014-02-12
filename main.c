@@ -39,6 +39,7 @@
 #include "onewire_info.h"
 #include "env.h" 
 #include "nand.h"
+#include "ddramtest.h"
 
 extern int load_kernel(struct nand_info *nand, struct image_info *img_info);
 
@@ -51,11 +52,8 @@ static void display_banner (void)
 	char *version = "AT91Bootstrap";
 	char *ver_num = " "AT91BOOTSTRAP_VERSION" ("COMPILE_TIME")";
 
-	usart_puts("\n");
-	usart_puts("\n");
 	usart_puts(version);
 	usart_puts(ver_num);
-	usart_puts("\n");
 	usart_puts("\n");
 }
 #if 0
@@ -154,7 +152,7 @@ int main(void){
 	nand_init(&nand);
 
 	display_banner();
-        
+
 	env_main(&nand, &image);
 
 	image.dest = (unsigned char *)JUMP_ADDR;

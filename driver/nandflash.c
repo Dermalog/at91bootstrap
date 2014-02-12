@@ -215,12 +215,12 @@ static void config_nand_ooblayout(struct nand_ooblayout *layout,
 }
 #endif /* #ifdef CONFIG_NANDFLASH_SMALL_BLOCKS */
 
-#ifdef CONFIG_USE_ON_DIE_ECC_SUPPORT
 static void write_byte(unsigned char data)
 {
 	writeb(data, (unsigned long)CONFIG_SYS_NAND_BASE);
 }
 
+#ifdef CONFIG_USE_ON_DIE_ECC
 static void nand_set_feature_on_die_ecc(unsigned char is_enable)
 {
 	unsigned char i;
@@ -281,7 +281,7 @@ static int nand_init_on_die_ecc(void)
 {
 	unsigned char is_enable;
 
-#ifdef CONFIG_ON_DIE_ECC
+#ifdef CONFIG_USE_ON_DIE_ECC
 	is_enable = 1;
 #else
 	is_enable = 0;
@@ -297,7 +297,7 @@ static int nand_init_on_die_ecc(void)
 
 	return 0;
 }
-#endif /* #ifdef CONFIG_USE_ON_DIE_ECC_SUPPORT */
+#endif /* #ifdef CONFIG_USE_ON_DIE_ECC */
 
 #ifdef CONFIG_ONFI_DETECT_SUPPORT
 static unsigned short onfi_crc16(unsigned short crc,
@@ -514,7 +514,7 @@ int nandflash_get_type(struct nand_info *nand)
 	}
 #endif
 
-#ifdef CONFIG_USE_ON_DIE_ECC_SUPPORT
+#ifdef CONFIG_USE_ON_DIE_ECC
 	if (chip->features)
 		if (nand_init_on_die_ecc())
 			return -1;
@@ -571,7 +571,7 @@ static int nand_read_status(void)
 	if (!timeout)
 		return -1;
 
-#ifdef CONFIG_ON_DIE_ECC
+#ifdef CONFIG_USE_ON_DIE_ECC
 	if (status & STATUS_ERROR) {
 		dbg_info("WARNING: Read On-Die ECC error\n");
 		return -1;
@@ -687,6 +687,10 @@ int nand_read_sector(struct nand_info *nand,
 	default:
 		return -1;
 	}
+#define LED_RED AT91C_PIN_PC(25)
+#define LED_GREEN AT91C_PIN_PC(23)
+
+	pio_set_value(LED_RED,1);
 
 	nand_cs_enable();
 
@@ -702,6 +706,10 @@ int nand_read_sector(struct nand_info *nand,
 
 	nand->command(CMD_READ_1);
 
+	pio_set_value(LED_RED,0);
+
+	pio_set_value(LED_GREEN,1);
+
 #ifdef CONFIG_USE_PMECC
 	if (usepmecc)
 		pmecc_start_data_phase();
@@ -715,6 +723,7 @@ int nand_read_sector(struct nand_info *nand,
 	} else {
 		for (i = 0; i < readbytes; i++)
 			*pbuf++ = *(volatile unsigned char *)(CONFIG_SYS_NAND_BASE);
+	pio_set_value(LED_GREEN,0);
 
 #ifdef CONFIG_USE_PMECC
 		if (usepmecc)

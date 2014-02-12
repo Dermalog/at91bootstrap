@@ -9,6 +9,7 @@
 #include "usart.h"
 #include "debug.h"
 #include "div.h"
+#include "ddramtest.h"
 
 #include <stdint.h>
 //#include "memory.h"
@@ -122,7 +123,7 @@ int get_latest_var_id(Vars *v){
 
 	id = select_id_table[get_seq_case(v[0].seq)][get_seq_case(v[1].seq)];
     if (id < 0 ){
-		dbg_log(1,"wrong variables combinations\n\r");
+		dbg_log(1,"wrong variables combinations\n");
 		return -1;
     } else if (id == compare ){
 		if (vars[0].seq > vars[1].seq)
@@ -135,7 +136,7 @@ int get_latest_var_id(Vars *v){
     if (check_crc(&vars[id]) == 0 ){
         id = (id + 1)%2; // if this wrong crc lthen try other id
         if (check_crc(&vars[id]) == 0){
-			dbg_log(1,"wrong crc32 on variables\n\r");
+			dbg_log(1,"wrong crc32 on variables id=%x\n",id);
 		}
 	}
 
@@ -236,6 +237,7 @@ char * varenv_read(struct nand_info *nand,int32_t flash_addr ){
 typedef struct _bootvar {
 	unsigned char new_firmware;
 	unsigned char cmd_nr;
+	unsigned int ddram_test;
 } BootVars;
 
 static BootVars bootvars;
@@ -309,15 +311,24 @@ int bootvars_write(struct nand_info * nand, uint32_t flash_addr) {
 	vars[id].seq = seq;
 	p = vars[id].buf;
 	memset(p, 0, sizeof(vars[id].buf));
+
 	strcpy(p, "new_firmware=");
 	p += strlen(p);
 	fill_hex_int(p, bootvars.new_firmware);
 	p += strlen(p);
 	p++; // skip '\0' to separate variables.
+
 	strcpy(p, "cmd_nr=");
 	p += strlen(p);
 	fill_hex_int(p, bootvars.cmd_nr);
 	p += strlen(p);
+	p++; // skip '\0' to separate variables.
+
+	strcpy(p, "ddram_test=");
+	p += strlen(p);
+	fill_hex_int(p, bootvars.ddram_test);
+	p += strlen(p);
+
 	vars[id].crc32 = crc32(0, (const unsigned char *) vars[id].buf,
 			sizeof(vars[id].buf));
 	//image.dest = (unsigned char *)&vars[id];
@@ -346,6 +357,8 @@ void bootvars_decode(char *p) {
 			bootvars.new_firmware = hex2num(strafter(p, '='));
 		} else if (strncmp(p, "cmd_nr", 6) == 0) {
 			bootvars.cmd_nr = hex2num(strafter(p, '='));
+		} else if (strncmp(p, "ddram_test", 10) == 0) {
+			bootvars.ddram_test = hex2num(strafter(p, '='));
 		}
 
 		p += len + 1;
@@ -418,6 +431,7 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 	char *cmd=NULL;
 	uint32_t kernelAddr=0;
 	uint32_t dtbAddr=0;
+	int bootvars_writeback = 0;
 
 	p = varenv_read(nand, BOOTVAR_ADDR);
 	if (p == NULL ) {
@@ -428,13 +442,27 @@ int env_main(struct nand_info *nand, struct image_info *image) {
 	bootvars_decode(p);
 	dbg_log(1,"new_firmware = %x\n\r",bootvars.new_firmware);
 	dbg_log(1,"cmd_nr       = %x\n\r",bootvars.cmd_nr);
+	dbg_log(1,"ddram_test   = %x\n\r",bootvars.ddram_test);
+
+	ddramtest(bootvars.ddram_test);
+	if (bootvars.ddram_test){
+		bootvars.ddram_test=0;
+		bootvars_writeback=1;
+		// read boot variables again
+		// because his buffer is destroyed during memory test!!!!
+		varenv_read(nand, BOOTVAR_ADDR);
+	}
 
 	if (bootvars.new_firmware) {
 		cmd_nr = (bootvars.cmd_nr + 1) % 2;
 		bootvars.new_firmware = 0;
-		bootvars_write(nand, BOOTVAR_ADDR);
+		bootvars_writeback=1;
 	} else
 		cmd_nr = bootvars.cmd_nr;
+
+	if (bootvars_writeback){
+		bootvars_write(nand, BOOTVAR_ADDR);
+	}
 
 	p = varenv_read(nand, ENVVAR_ADDR);
 	if (p == NULL ) {

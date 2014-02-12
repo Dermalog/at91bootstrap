@@ -33,6 +33,10 @@ void at91_disable_wdt(void)
 {
 	writel(AT91C_WDTC_WDDIS, AT91C_BASE_WDT + WDTC_MR);
 }
+void at91_update_wdt(void) {}
 #else
 void at91_disable_wdt(void) {}
+void at91_update_wdt(void){
+	writel(AT91C_WDTC_KEY|AT91C_WDTC_WDRSTT, AT91C_BASE_WDT + WDTC_CR);
+}
 #endif

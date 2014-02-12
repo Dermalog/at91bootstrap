@@ -29,5 +29,6 @@
 #define __WATCHDOG_H__
 
 extern void at91_disable_wdt(void);
+extern void at91_update_wdt(void);
 
 #endif /* __WATCHDOG_H__ */

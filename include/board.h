@@ -72,4 +72,8 @@
 #include "sama5d3xek.h"
 #endif
 
+#ifdef CONFIG_SAMA5D31EB
+#include "sama5d31eb.h"
+#endif
+
 #endif /* #ifndef __BOARD_H__ */

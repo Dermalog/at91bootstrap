@@ -116,12 +116,11 @@ OS_MEM_SIZE := $(strip $(subst ",,$(CONFIG_OS_MEM_SIZE)))
 OS_IMAGE_NAME := $(strip $(subst ",,$(CONFIG_OS_IMAGE_NAME)))
 LINUX_KERNEL_ARG_STRING := $(strip $(subst ",,$(CONFIG_LINUX_KERNEL_ARG_STRING)))
 
-# Board definitions
-BOARDNAME=$(strip $(subst ",,$(CONFIG_BOARDNAME)))
 
 # CHIP is UNUSED
 CHIP:=$(strip $(subst ",,$(CONFIG_CHIP)))
 BOARD:=$(strip $(subst ",,$(CONFIG_BOARD)))
+BOARDNAME:=$(BOARD)
 MACH_TYPE:=$(strip $(subst ",,$(CONFIG_MACH_TYPE)))
 LINK_ADDR:=$(strip $(subst ",,$(CONFIG_LINK_ADDR)))
 DATA_SECTION_ADDR:=$(strip $(subst ",,$(CONFIG_DATA_SECTION_ADDR)))
@@ -251,7 +250,7 @@ PrintFlags:
 $(AT91BOOTSTRAP): $(OBJS)
 	$(if $(wildcard $(BINDIR)),,mkdir -p $(BINDIR))
 	@echo "  LD        "$(BOOT_NAME).elf
-	$(LD) $(LDFLAGS) -n -o $(BINDIR)/$(BOOT_NAME).elf $(OBJS) $(MYLDFLAGS)
+	@$(LD) $(LDFLAGS) -n -o $(BINDIR)/$(BOOT_NAME).elf $(OBJS) $(MYLDFLAGS)
 #	@$(OBJCOPY) --strip-debug --strip-unneeded $(BINDIR)/$(BOOT_NAME).elf -O binary $(BINDIR)/$(BOOT_NAME).bin
 	@$(OBJCOPY) --strip-all $(BINDIR)/$(BOOT_NAME).elf -O binary $@
 
@@ -273,7 +272,7 @@ PHONY+= boot bootstrap
 
 rebuild: clean all
 install:
-	cp $(BINDIR)/$(BOOT_NAME).bin ../../my_images/boot.eb.bin
+	cp $(BINDIR)/$(BOOT_NAME).bin ../../my_images/$(BOARD)-boot.bin
 
 
 
