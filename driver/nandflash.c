@@ -721,9 +721,18 @@ int nand_read_sector(struct nand_info *nand,
 			pbuf += 2;
 		}
 	} else {
-		for (i = 0; i < readbytes; i++)
+		unsigned long int a;
+		for (i = 0; i < readbytes; i+=4){
+			a = (unsigned long int)*(volatile unsigned char *)(CONFIG_SYS_NAND_BASE);
+			a |= ((unsigned long int)*(volatile unsigned char *)(CONFIG_SYS_NAND_BASE))<<8;
+			a |= ((unsigned long int)*(volatile unsigned char *)(CONFIG_SYS_NAND_BASE))<<16;
+			a |= ((unsigned long int)*(volatile unsigned char *)(CONFIG_SYS_NAND_BASE))<<24;
+			*((unsigned long int *)pbuf) = a;
+			pbuf += 4;
+		}
+	/*	for (i = 0; i < readbytes; i++)
 			*pbuf++ = *(volatile unsigned char *)(CONFIG_SYS_NAND_BASE);
-	pio_set_value(LED_GREEN,0);
+*/	pio_set_value(LED_GREEN,0);
 
 #ifdef CONFIG_USE_PMECC
 		if (usepmecc)
