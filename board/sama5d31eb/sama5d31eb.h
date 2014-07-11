@@ -194,8 +194,8 @@
 /*
  * Recovery function
  */
-#define CONFIG_SYS_RECOVERY_BUTTON_PIN	AT91C_PIN_PE(27)
-#define RECOVERY_BUTTON_NAME	"BP3/PB_USER1"
+#define CONFIG_SYS_RECOVERY_BUTTON_PIN	AT91C_PIN_PD(23)
+#define RECOVERY_BUTTON_NAME	"Debug_/EraseFlash/pin5"
 
 /*
  * One wire pin

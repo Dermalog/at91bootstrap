@@ -210,7 +210,7 @@ static void recovery_buttons_hw_init(void)
 		{(char *)0, 0, 0, PIO_DEFAULT, PIO_PERIPH_A},
 	};
 
-	pmc_enable_periph_clock(AT91C_ID_PIOE);
+	pmc_enable_periph_clock(AT91C_ID_PIOD);
 	pio_configure(recovery_button_pins);
 }
 #endif /* #if defined(CONFIG_NANDFLASH_RECOVERY) || defined(CONFIG_DATAFLASH_RECOVERY) */
@@ -280,8 +280,8 @@ void leds_init(){
 			{"LED_RED",   LED_RED,   0, PIO_DEFAULT, PIO_OUTPUT},
 			{"LED_GREEN", LED_GREEN, 0, PIO_DEFAULT, PIO_OUTPUT}
 	};
-	pmc_enable_periph_clock(AT91C_ID_PIOC);
-	pio_configure(leds);
+	// pmc_enable_periph_clock(AT91C_ID_PIOC);
+	// pio_configure(leds);
 }
 
 void hw_init(void)
@@ -333,6 +333,7 @@ void hw_init(void)
 
 #if defined(CONFIG_NANDFLASH_RECOVERY) || defined(CONFIG_DATAFLASH_RECOVERY)
 	/* Init the recovery buttons pins */
+	dbg_info("recovery_button_hw_init\n\r");
 	recovery_buttons_hw_init();
 #endif
 	leds_init();
