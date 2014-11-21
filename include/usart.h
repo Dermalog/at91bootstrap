@@ -32,8 +32,12 @@
 	(((((mck) * 10) / ((baud) * 16)) % 10) >= 5) ? \
 	(mck / (baud * 16) + 1) : ((mck) / (baud * 16))
 
-extern void usart_init(unsigned int);
-extern void usart_puts(const char *ptr);
-extern char usart_getc(void);
+extern void dbgu_init(unsigned int);
+extern void dbgu_puts(const char *ptr);
+extern char dbgu_getc(void);
+
+extern void usart1_init(unsigned int);
+extern void usart1_puts(const char *ptr);
+extern char usart1_getc(void);
 
 #endif /* __USART_H__ */

@@ -58,6 +58,7 @@
 #define DEBUG_VERY_LOUD   4
 
 extern int dbg_printf(const char *fmt_str, ...);
+extern int usart1_printf(const char *fmt_str, ...);
 
 #ifdef CONFIG_DEBUG
 #define dbg_log(level, fmt_str, args...) \

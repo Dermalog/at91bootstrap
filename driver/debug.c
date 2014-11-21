@@ -120,7 +120,61 @@ int dbg_printf(const char *fmt_str, ...)
 	/* Terminate the result string */
 	*p = '\0';
 
-	usart_puts(dbg_buf);
+	dbgu_puts(dbg_buf);
+
+	return 0;
+}
+
+int usart1_printf(const char *fmt_str, ...)
+{
+	va_list ap;
+
+	char *p = dbg_buf;
+
+	short num = 0;
+
+	va_start(ap, fmt_str);
+	while (*fmt_str != 0) {
+		if (*fmt_str != '%')
+			*p++ = *fmt_str++;
+		else if (*(fmt_str + 1) == '%') {
+			*p++ = '%';
+			fmt_str += 2;
+		} else {
+			fmt_str++;	/* skip % */
+			switch (*fmt_str) {
+			case 'd':
+			case 'i':
+			case 'u':
+			case 'x':
+				*p++ = '0';
+				*p++ = 'x';
+				num = fill_hex_int(p, va_arg(ap, unsigned int));
+
+				break;
+			case 's':
+				num = fill_string(p, va_arg(ap, char *));
+
+				break;
+			case 'c':
+				num =
+				    fill_char(p, (char)va_arg(ap, signed long));
+
+				break;
+			default:
+				return -1;
+			}
+
+			fmt_str++;
+			p += num;
+		}
+	}
+	va_end(ap);
+
+	/* Terminate the result string */
+	*p = '\0';
+
+	usart1_puts(dbg_buf);
 
 	return 0;
 }

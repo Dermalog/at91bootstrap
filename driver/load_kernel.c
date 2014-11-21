@@ -306,23 +306,22 @@ int load_kernel(struct nand_info *nand,struct image_info *image)
 	image_size = swap_uint32(image_header->size);
 	load_addr = swap_uint32(image_header->load);
 #ifdef CONFIG_NANDFLASH
-	usart_puts("load linux kernel\n");
+	dbgu_puts("load linux kernel\n");
 	ret = nand_loadimage(nand,
 			image->offset,
 			image_size+sizeof(struct kernel_image_header),
 			image->dest);
 	if (ret != 0)
 		return ret;
-	usart_puts("....done\n");
+	dbgu_puts("....done\n");
 
-	usart_puts("load device tree blob\n");
+	dbgu_puts("load device tree blob\n");
 	ret = nand_loadimage(nand, image->of_offset,
 						image->of_length, image->of_dest);
 	if (ret != 0)
 		return ret;
-	usart_puts("....done\n");
+	dbgu_puts("....done\n");
 #endif
-
 
 	kernel_entry = (void (*)(int, int, unsigned int))
 					swap_uint32(image_header->entry_point);

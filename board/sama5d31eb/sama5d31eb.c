@@ -70,7 +70,25 @@ static void at91_dbgu_hw_init(void)
 static void initialize_dbgu(void)
 {
 	at91_dbgu_hw_init();
-	usart_init(BAUDRATE(MASTER_CLOCK, 115200));
+	dbgu_init(BAUDRATE(MASTER_CLOCK, 115200));
+}
+
+static void initialize_usart1(void){
+	/* Configure USART1 pins */
+	const struct pio_desc usart1_pins[] = {
+		{"RXD1", AT91C_PIN_PB(28), 0, PIO_DEFAULT, PIO_PERIPH_A},
+		{"TXD1", AT91C_PIN_PB(29), 0, PIO_DEFAULT, PIO_PERIPH_A},
+		{(char *)0, 0, 0, PIO_DEFAULT, PIO_PERIPH_A},
+	};
+	/*  Configure the USART1 pins */
+	pmc_enable_periph_clock(AT91C_ID_PIOB);
+	pio_configure(usart1_pins);
+
+	/* Enable clock */
+	pmc_enable_periph_clock(AT91C_ID_USART1);
+
+	usart1_init(BAUDRATE(MASTER_CLOCK, 115200));
+
 }
 
 #ifdef CONFIG_DDR2
@@ -318,6 +336,7 @@ void hw_init(void)
 
 	/* initialize the dbgu */
 	initialize_dbgu();
+	initialize_usart1();
 
 #ifdef CONFIG_DDR2
 	/* Initialize MPDDR Controller */

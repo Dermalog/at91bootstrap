@@ -52,9 +52,9 @@ static void display_banner (void)
 	char *version = "AT91Bootstrap";
 	char *ver_num = " "AT91BOOTSTRAP_VERSION" ("COMPILE_TIME")";
 
-	usart_puts(version);
-	usart_puts(ver_num);
-	usart_puts("\n");
+	dbgu_puts(version);
+	dbgu_puts(ver_num);
+	dbgu_puts("\n");
 }
 #if 0
 int main(void)
