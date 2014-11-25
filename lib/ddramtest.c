@@ -100,8 +100,8 @@ void ddramtest(int cnt){
 		while (data_test(0xAAAAAAAA)==0);
 		while (data_test(0x55555555)==0);
 		while (addr_test() == 0 );
-		dbg_printf("\n");
-		usart1_printf("\n");
+		dbg_printf("SUCCESS\n");
+		usart1_printf("SUCCESS\n");
 	}
 
 }
